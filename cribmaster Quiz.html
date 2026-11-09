@@ -131,6 +131,31 @@ ol.seq{margin:0;padding-left:22px;font-size:16px}
 .barrow{display:flex;justify-content:space-between;gap:12px;background:var(--tag);padding:8px 10px;font-weight:600;font-size:16px}
 .barrow.good{background:var(--good);color:#fff}
 .next{font-size:15px;color:var(--ink-soft)}
+.scene{background:var(--foam);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:8px}
+.scene svg{width:100%;height:auto;display:block;overflow:hidden}
+.scene .lbl{fill:#fff;font:600 12px var(--head)}.scene .lbl.dim{fill:#b9c4ce;font-weight:500}.scene .lbl.big{font-size:17px;font-weight:700}.scene .lbl.onl{fill:var(--ink)}
+.scene .box{fill:#3a434c;stroke:#7f8d99;stroke-width:1.5;transition:fill .25s,stroke .25s}
+.scene .box.hot{fill:var(--cutout);stroke:#fff}
+.scene .box.hot+text,.scene .box.hot+text+text.never{fill:var(--ink)}
+.scene .room{fill:#20252a;stroke:#59646f;stroke-width:1.5}
+.scene .rack{stroke:#7f8d99;stroke-width:3;fill:none;stroke-linecap:round}
+.scene .door{stroke:var(--steel);stroke-width:6;stroke-linecap:round;transition:transform .7s ease}
+.scene .door.open{transform:rotate(-68deg)}.scene .door.hot{stroke:var(--cutout)}
+.scene .me{fill:var(--cutout);transition:transform 1s ease}
+.scene .held{stroke:var(--steel);stroke-width:5;stroke-linecap:round;fill:none}
+.scene .fade{opacity:0;transition:opacity .4s}.scene .fade.show{opacity:1}
+.scene .slide{transition:transform .7s ease,fill .25s}.scene .slide.open{transform:translateY(-70px);opacity:.35}
+.scene .car{transition:transform 1.4s ease}.scene .bin{fill:#59646f}.scene .binhot{fill:var(--steel)}.scene .binhot.hot{fill:var(--cutout)}.scene .hub{fill:#3a434c}
+.scene .bluebtn{fill:#2a78d6;stroke:#fff;stroke-width:2;transition:r .2s}.scene .bluebtn.hot{r:27px;stroke:var(--cutout);stroke-width:4}
+.scene .ico{fill:none;stroke:var(--steel);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.scene .ant{fill:var(--steel)}.scene .ant.hot{fill:var(--cutout)}.scene .dimln{stroke:var(--cutout);stroke-width:2;fill:none}
+.scene .row{fill:#2a3138;stroke:#59646f}.scene .row.on{fill:var(--cutout);stroke:#fff}
+.cap{color:#fff;font:600 18px/1.25 var(--head);min-height:46px;display:flex;gap:10px;align-items:flex-start}
+.capn{flex:none;background:var(--cutout);color:var(--ink);padding:1px 7px;border-radius:3px;font-variant-numeric:tabular-nums;font-size:15px}
+.capn:empty{display:none}
+.replay{align-self:flex-start;color:#fff;border:2px solid #fff;border-radius:4px;padding:8px 12px;font:700 16px/1 var(--head);min-height:40px}
+.stamp.info{color:var(--cabinet)}
+.scene g.panel .box.hot~.lbl{fill:var(--ink)}.scene g.panel .box.hot~.ico{stroke:var(--ink)}
 form.row{gap:12px}
 </style>
 </head>
@@ -140,7 +165,7 @@ form.row{gap:12px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const QUESTIONS=[{"t":"mc","k":"AccuPort issue","q":"You're about to issue tools from the AccuPort. What's your very first move?","o":["Press Work Order","Scan your badge","Step on Pad A","Open the machine door"]},{"t":"mc","k":"AccuPort issue","q":"You've scanned your badge on Pad A. Which button comes next?","o":["Admin","Work Order","Change Status","Check Items Out"]},{"t":"order","k":"AccuPort issue","q":"Tap these in the right order to get into the AccuPort.","o":["Step on Pad A","Scan Work Order and Task Card","Scan your badge","Press Work Order","Open machine door and step on Pad B"]},{"t":"mc","k":"AccuPort issue","q":"You're standing on Pad B. What must you do before entering the Tool Room?","o":["Scan your badge again","Press Check Items Out","Close the machine door","Step back onto Pad A"]},{"t":"tf","k":"AccuPort issue","q":"True or false: with your tools collected, you can step on Pad B first and close the inside door afterwards.","o":["True","False"]},{"t":"mc","k":"AccuPort issue","q":"Leaving after an issue, where do you confirm the tools in your hand are exact?","o":["The ATR screen","The AccuCab display","A paper log at the door","The ProStock carousel"]},{"t":"tf","k":"AccuPort return","q":"True or false: when you return tools, you still press Work Order and scan the Work Order and Task Card.","o":["True","False"]},{"t":"mc","k":"AccuPort return","q":"Return done and you're back on Pad A. Which button shows whether tools are still outstanding under your name?","o":["Work Order","Check Items Out","Change Status","Adjust"]},{"t":"order","k":"ATR admin","q":"A tool needs to go to calibration. Tap the ATR steps in the right order.","o":["Scan your badge and go to Admin","Search the SerialID or Part Number","Select Adjust","Highlight the tool and select Change Status","Set the status to In Calibration and press YES"]},{"t":"mc","k":"ATR admin","q":"In Adjust on the ATR, what do you search by to find the tool?","o":["Your badge number","Bin or Crib number","SerialID or Part Number","Work Order or Task Card"]},{"t":"mc","k":"CM reports","q":"You need the full record of where one serialised tool has been. Which report do you open?","o":["Tools History by Serial Number","Check Out Items Reports","Daily Transaction Reports","Calibration Overdue Reports"]},{"t":"mc","k":"PPE ProStock","q":"ProStock carousel: you've got your item. How do you close the door?","o":["Press Issue again","Push it shut by hand","Scan your badge again","Press the carousel blue button"]},{"t":"order","k":"PPE ProStock","q":"You need PPE from the ProStock. Tap the steps in the right order.","o":["Select item","Scan your employee badge","Search for the item required","Retrieve the item","Press Issue","Press the carousel blue button"]},{"t":"mc","k":"Support","q":"Who is responsible for on-site maintenance, both corrective and preventive?","o":["The European Support Team","The distributor","The customer","CribMaster Technical Support"]},{"t":"mc","k":"LPR site survey","q":"On a room door with LPR, what's the maximum spacing between antennas on a side?","boss":1,"o":["0.75 m","1.50 m","1.25 m","1.00 m"]}];
-const KEY_BLOB="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";
+const KEY_BLOB="=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";
 const TOOLS=[
  [["M11 37L27 21",6],["M37 8A9.4 9.4 0 1 0 40 21",6]],
  [["M9 39L20 28",9],["M20 28L40 8",3.5]],
@@ -160,7 +185,7 @@ const TOOLS=[
 ];
 
 "use strict";
-const LIMIT=20, GRACE=1.5, MAX_PLAYERS=10;
+const LIMIT=20, GRACE=2.5, MAX_PLAYERS=10, POLL_MS=1200, STREAM_WAIT=3000;
 const $app=document.getElementById("app");
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=n=>Number(n||0).toLocaleString("en-US");
@@ -218,16 +243,24 @@ function applyAt(root,path,fn){
   return root;
 }
 function stream(path,onData){
-  let data=null,es=null,stopped=false;
+  /* Live connection first. Some work networks block it, so fall back to asking every second. */
+  let data=null,es=null,stopped=false,live=false,poll=null,last="";
   const open=()=>{
     es=new EventSource(dburl(path));
-    es.addEventListener("put",e=>{const m=JSON.parse(e.data);data=applyAt(data,m.path,()=>m.data);onData(data)});
-    es.addEventListener("patch",e=>{const m=JSON.parse(e.data);data=applyAt(data,m.path,o=>Object.assign(o&&typeof o==="object"?o:{},m.data));onData(data)});
+    es.addEventListener("put",e=>{live=true;const m=JSON.parse(e.data);data=applyAt(data,m.path,()=>m.data);onData(data)});
+    es.addEventListener("patch",e=>{live=true;const m=JSON.parse(e.data);data=applyAt(data,m.path,o=>Object.assign(o&&typeof o==="object"?o:{},m.data));onData(data)});
     es.addEventListener("auth_revoked",reopen);es.addEventListener("cancel",reopen);
   };
-  const reopen=async()=>{if(stopped)return;es.close();try{await refreshToken()}catch(e){}if(!stopped)setTimeout(open,500)};
+  const reopen=async()=>{if(stopped||poll)return;es.close();try{await refreshToken()}catch(e){}if(!stopped)setTimeout(open,500)};
+  const startPoll=()=>{
+    if(stopped||live||poll)return;
+    es.close();
+    const tick=async()=>{if(stopped)return;try{const d=await api("GET",path),j=JSON.stringify(d);if(j!==last){last=j;data=d;onData(d)}}catch(e){}};
+    tick();poll=setInterval(tick,POLL_MS);
+  };
   open();
-  const h={stop(){stopped=true;es.close()}};streams.push(h);return h;
+  const wait=setTimeout(startPoll,STREAM_WAIT);
+  const h={stop(){stopped=true;clearTimeout(wait);clearInterval(poll);if(es)es.close()}};streams.push(h);return h;
 }
 function stopStreams(){streams.forEach(s=>s.stop());streams=[]}
 
@@ -252,13 +285,65 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
 function msg(t){$app.innerHTML=`<section class="card"><div class="clock"></div><p class="q">${esc(t)}</p></section>`}
 function copyBtn(b,text,box){const fail=()=>{document.getElementById(box).innerHTML=`<textarea class="copybox" rows="4" readonly>${esc(text)}</textarea>`};try{navigator.clipboard.writeText(text).then(()=>{const o=b.textContent;b.textContent="Copied";setTimeout(()=>b.textContent=o,1500)},fail)}catch(e){fail()}}
 
+/* ---------- Answer animations ---------- */
+const POS={start:[12,150],padA:[55,150],padB:[160,150],door2:[213,150],room:[275,150],exit:[-20,150]};
+const lbl=(x,y,t,cls)=>`<text x="${x}" y="${y}" class="lbl ${cls||""}" text-anchor="middle">${t}</text>`;
+const SCENES={
+  accuport:()=>`<rect data-k="atr" class="box" x="14" y="12" width="150" height="62" rx="4"/><text data-k="screen" x="89" y="49" class="lbl big" text-anchor="middle"></text>${lbl(208,47,"ATR screen","dim")}
+    <rect data-k="padA" class="box" x="22" y="118" width="70" height="60" rx="3"/>${lbl(57,174,"Pad A")}
+    <rect data-k="padB" class="box" x="126" y="118" width="70" height="60" rx="3"/>${lbl(161,174,"Pad B")}
+    <rect class="room" x="228" y="102" width="104" height="84" rx="3"/>${lbl(280,118,"Tool Room","dim")}
+    <path class="rack" d="M240 128h80M240 138h80M254 124v8M272 124v8M300 124v8"/>
+    <line data-k="door1" class="door" x1="109" y1="108" x2="109" y2="178" style="transform-origin:109px 108px"/>${lbl(109,100,"Machine door","dim")}
+    <line data-k="door2" class="door" x1="213" y1="108" x2="213" y2="178" style="transform-origin:213px 108px"/>${lbl(213,196,"Inside door","dim")}
+    <g data-k="me" class="me"><circle cx="0" cy="-26" r="8"/><path d="M-9 0v-10a9 9 0 0 1 18 0v10z"/><path data-k="tool" class="fade held" d="M10 -12l13 -13"/></g>`,
+  screen:()=>`<rect class="box" x="30" y="10" width="280" height="180" rx="6"/><text data-k="title" x="170" y="36" class="lbl big" text-anchor="middle"></text><g data-k="rows"></g>`,
+  prostock:()=>`<circle class="room" cx="110" cy="100" r="78"/><g data-k="car" class="car" style="transform-origin:110px 100px">${[0,45,90,135,180,225,270,315].map(a=>`<rect class="bin" x="98" y="30" width="24" height="26" rx="2" transform="rotate(${a} 110 100)"/>`).join("")}<rect data-k="item" class="binhot" x="98" y="30" width="24" height="26" rx="2"/></g>
+    <circle class="hub" cx="110" cy="100" r="16"/>
+    <rect data-k="door1" class="box slide" x="86" y="18" width="48" height="44" rx="3"/>${lbl(110,12,"Carousel door","dim")}
+    <rect data-k="scr" class="box" x="214" y="28" width="112" height="58" rx="4"/><text data-k="screen" x="270" y="62" class="lbl" text-anchor="middle"></text>
+    <circle data-k="blue" class="bluebtn" cx="270" cy="134" r="22"/>${lbl(270,176,"Blue button","dim")}`,
+  support:()=>`<g class="panel"><rect data-k="left" class="box" x="14" y="24" width="150" height="152" rx="6"/>${lbl(89,48,"Technical Support")}<path class="ico" d="M66 88c0-14 46-14 46 0v8h-13v-8h-20v8H66z"/>${lbl(89,126,"Phone, email","dim")}${lbl(89,144,"and remote sessions","dim")}</g>
+    <g class="panel"><rect data-k="right" class="box" x="176" y="24" width="150" height="152" rx="6"/>${lbl(251,48,"On-site maintenance")}<path class="ico" d="M234 112l26-26M270 66a14 14 0 1 0 8 22"/>${lbl(251,126,"Corrective and preventive","dim")}<text data-k="screen" x="251" y="156" class="lbl big" text-anchor="middle"></text></g>`,
+  lpr:()=>`<rect class="room" x="58" y="58" width="224" height="132"/>${lbl(170,178,"Room door","dim")}
+    <rect data-k="a0" class="fade ant" x="66" y="44" width="30" height="12" rx="2"/><rect data-k="a1" class="fade ant" x="155" y="44" width="30" height="12" rx="2"/><rect data-k="a2" class="fade ant" x="244" y="44" width="30" height="12" rx="2"/>
+    <g data-k="dim" class="fade"><path class="dimln" d="M81 34h89M81 28v12M170 28v12"/><text x="126" y="24" class="lbl big" text-anchor="middle">max 1.25 m</text></g>${lbl(170,76,"Antennas along the door","dim")}`
+};
+let sceneT=null;
+function stopScene(){clearTimeout(sceneT);sceneT=null}
+function applyStep(svg,st){
+  const q=k=>svg.querySelector('[data-k="'+k+'"]');
+  svg.querySelectorAll(".hot").forEach(n=>n.classList.remove("hot"));
+  (st.hot||[]).forEach(k=>{const n=q(k);if(n)n.classList.add("hot")});
+  if(st.p){const m=q("me"),c=POS[st.p];m.style.transform=`translate(${c[0]}px,${c[1]+28}px)`}
+  if(st.s!==undefined){const n=q("screen");if(n)n.textContent=st.s}
+  if(st.d1!==undefined){const n=q("door1");if(n)n.classList.toggle("open",!!st.d1)}
+  if(st.d2!==undefined){const n=q("door2");if(n)n.classList.toggle("open",!!st.d2)}
+  if(st.tool!==undefined){const n=q("tool");if(n)n.classList.toggle("show",!!st.tool)}
+  if(st.rot!==undefined){const n=q("car");if(n)n.style.transform=`rotate(${st.rot}deg)`}
+  (st.show||[]).forEach(k=>{const n=q(k);if(n)n.classList.add("show")});
+  if(st.title!==undefined){q("title").textContent=st.title;
+    q("rows").innerHTML=(st.rows||[]).map((r,i)=>`<rect class="row ${i===st.hi?"on":""}" x="48" y="${50+i*32}" width="244" height="26" rx="3"/><text x="170" y="${68+i*32}" class="lbl ${i===st.hi?"onl":""}" text-anchor="middle">${esc(r)}</text>`).join("")}
+}
+function playScene(host,anim){
+  stopScene();if(!anim||!SCENES[anim.scene])return;
+  host.innerHTML=`<div class="scene"><svg viewBox="0 0 340 200" role="img" aria-label="Animated explanation of the answer">${SCENES[anim.scene]()}</svg><div class="cap"><span class="capn" id="capn"></span><span id="cap"></span></div><button class="replay" id="replay" hidden>Play again</button></div>`;
+  const svg=host.querySelector("svg"),cap=host.querySelector("#cap"),capn=host.querySelector("#capn"),re=host.querySelector("#replay"),steps=anim.steps;
+  re.addEventListener("click",()=>playScene(host,anim));
+  if(anim.init)applyStep(svg,anim.init);
+  let i=0;
+  const next=()=>{const st=steps[i];applyStep(svg,st);cap.textContent=st.c;capn.textContent=(i+1)+"/"+steps.length;sfx.click();i++;
+    if(i<steps.length)sceneT=setTimeout(next,2100);else re.hidden=false};
+  sceneT=setTimeout(next,450);
+}
+
 /* ---------- Admin ---------- */
 function rulesFor(email){
   const A=`auth.token.email === '${email.replace(/'/g,"")}'`, S="root.child('games').child($pin).child('state')";
   return JSON.stringify({rules:{".read":false,".write":false,games:{$pin:{".read":A,".write":A,
     state:{".read":"auth != null"},
     results:{".read":`auth != null && ${S}.child('phase').val() === 'end'`},
-    players:{".read":"auth != null",$uid:{".write":"auth != null && auth.uid === $uid",".validate":`newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 20 && (data.exists() || data.parent().numChildren() < ${MAX_PLAYERS})`}},
+    players:{".read":"auth != null",$uid:{".write":"auth != null && auth.uid === $uid",".validate":`newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 20`}},
     answers:{$uid:{".read":"auth != null && auth.uid === $uid",$q:{".write":`auth != null && auth.uid === $uid && !data.exists() && ${S}.child('phase').val() === 'question' && ${S}.child('qk').val() === $q`,".validate":"newData.hasChildren(['v','t']) && newData.child('t').isNumber()"}}}
   }}}},null,2);
 }
@@ -309,7 +394,7 @@ function hostClock(){
     const left=LIMIT-(Date.now()-s.at)/1000;
     const bar=document.getElementById("bar"),sec=document.getElementById("secs"),c=document.getElementById("clock");
     if(bar){bar.style.width=Math.max(0,left/LIMIT*100)+"%";c.classList.toggle("low",left<=6);sec.textContent=Math.max(0,Math.ceil(left))+"s"}
-    if(left<=-GRACE){clearInterval(H.timer);putState({phase:"review",i:s.i,qk:""})}
+    if(left<=-GRACE){clearInterval(H.timer);const k=H.key[s.i];putState({phase:"review",i:s.i,qk:"",ans:k.seq||k.c,e:k.e,anim:k.anim})}
   },200);
 }
 const answeredCount=i=>Object.keys(H.players).filter(u=>(H.answers[u]||{})["q"+i]).length;
@@ -348,21 +433,25 @@ function hostRender(){
     hostClock();return;
   }
   if(s.phase==="review"){
-    H.lastView=view;
     const q=QUESTIONS[s.i],k=H.key[s.i],board=scoreAll(H.players,H.answers,H.key,s.i);
     const rows=Object.keys(H.players).map(u=>(H.answers[u]||{})["q"+s.i]);
     let detail;
     if(k.seq){const ok=rows.filter(a=>a&&isRight(a.v,k)).length,wrong=rows.filter(a=>a&&!isRight(a.v,k)).length,none=rows.filter(a=>!a).length;
       detail=`<ol class="seq">${k.seq.map(x=>`<li>${esc(x)}</li>`).join("")}</ol><p class="sum">${ok} right, ${wrong} wrong, ${none} no answer</p>`}
     else detail=`<div class="bars">${q.o.map(o=>{const c=rows.filter(a=>a&&a.v===o).length;return `<div class="barrow ${o===k.c?"good":""}"><span>${esc(o)}</span><b>${c}</b></div>`}).join("")}<div class="barrow"><span>No answer</span><b>${rows.filter(a=>!a).length}</b></div></div>`;
+    if(H.lastView===view){document.getElementById("detail").innerHTML=detail;document.getElementById("hb").innerHTML=boardHTML(board);return}
+    H.lastView=view;
     const last=s.i===14,nq=QUESTIONS[s.i+1];
-    $app.innerHTML=`${hud("Admin only: players can't see this")}<section class="card"><div class="clock"></div>
+    $app.innerHTML=`${hud("Admin only: players can't see scores")}<section class="card"><div class="clock"></div>
       <div class="cardhead"><span>Task card ${s.i+1} of 15</span><span>${esc(q.k)}</span></div>
-      <h2 class="q">${esc(q.q)}</h2>${detail}<p>${esc(k.e)}</p><p class="src">Source: ${esc(k.s)}</p>
-      <h2 class="q">Scores so far</h2>${boardHTML(board)}
+      <h2 class="q">${esc(q.q)}</h2>
+      <div id="scene"></div>
+      <div id="detail">${detail}</div><p class="src">Source: ${esc(k.s)}</p>
+      <h2 class="q">Scores so far</h2><div id="hb">${boardHTML(board)}</div>
       ${nq?`<p class="next"><b>Next up:</b> ${esc(nq.q)}</p>`:""}
       <button class="go" id="nextBtn" data-act="next">${last?"Finish and show results":"Next task card"}</button></section>`;
-    onAct.next=async b=>{b.disabled=true;
+    playScene(document.getElementById("scene"),k.anim);
+    onAct.next=async b=>{b.disabled=true;stopScene();
       if(last){const full=scoreAll(H.players,H.answers,H.key,14);
         const results={board:full.map(r=>({uid:r.uid,name:r.name,score:r.score,correct:r.correct})),per:Object.fromEntries(full.map(r=>[r.uid,r.per])),reveal:QUESTIONS.map((x,i)=>({q:x.q,a:H.key[i].seq?H.key[i].seq.join(", then "):H.key[i].c,s:H.key[i].s}))};
         await api("PUT",`games/${gid}/results`,results);await putState({phase:"end",i:14,qk:""})}
@@ -376,7 +465,7 @@ function hostRender(){
       <h1 class="rank">Final standings</h1>${boardHTML(board)}
       <button class="go" data-act="again">Open a new game</button></section>`;
     sfx.win();burst(160);
-    onAct.again=async()=>{stopStreams();try{await api("DELETE",`games/${gid}`)}catch(e){}store.del("cq-game");hostOpen().catch(ex=>adminSetup(ex.message))};
+    onAct.again=async()=>{stopStreams();stopScene();try{await api("DELETE",`games/${gid}`)}catch(e){}store.del("cq-game");hostOpen().catch(ex=>adminSetup(ex.message))};
   }
 }
 
@@ -399,6 +488,8 @@ function playerJoin(params,err){
       await signInAnon();
       const st=await api("GET",`games/${gid}/state`);
       if(!st){if(pinEl)delete params.pin;return playerJoin(params,"No game with that PIN. Check it with the admin.")}
+      const seats=await api("GET",`games/${gid}/players`)||{};
+      if(!seats[auth.uid]&&Object.keys(seats).length>=MAX_PLAYERS)return playerJoin(params,"This game is full. Ask the admin for a place.");
       await api("PUT",`games/${gid}/players/${auth.uid}`,{name});
       const mine=await api("GET",`games/${gid}/answers/${auth.uid}`).catch(()=>null);
       P.locked=mine||{};
@@ -414,11 +505,23 @@ function lockedView(title,line){
 }
 function playerRender(){
   const s=P.state;if(!s)return msg("The admin closed this game.");
-  const view=s.phase+":"+s.i;if(P.view===view)return;P.view=view;clearInterval(P.timer);
+  const view=s.phase+":"+s.i;if(P.view===view)return;P.view=view;clearInterval(P.timer);stopScene();
   if(s.phase==="lobby")return lockedView("You're in","Waiting for the admin to start the quiz.");
   if(s.phase==="question"){if(P.locked[s.qk])return lockedView("Locked in","Waiting for the admin.");return playerQuestion(s)}
-  if(s.phase==="review"){const had=P.locked["q"+s.i];return lockedView(had?"Locked in":"Out of time","Waiting for the admin to open the next card.")}
+  if(s.phase==="review")return playerReview(s);
   if(s.phase==="end")return playerEnd();
+}
+function playerReview(s){
+  const q=QUESTIONS[s.i],ans=s.ans;
+  $app.innerHTML=`${hud(esc(P.name))}${pTray()}<section class="card"><div class="clock"></div>
+    <div class="cardhead"><span>Task card ${s.i+1} of 15</span><span>${esc(q.k)}</span></div>
+    <div class="stamp info">The answer</div>
+    ${Array.isArray(ans)?`<ol class="seq">${ans.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:`<p class="q">${esc(ans||"")}</p>`}
+    <div id="scene"></div>
+    <p>${esc(s.e||"")}</p>
+    <p class="src">Waiting for the admin to open the next card.</p></section>`;
+  window.scrollTo(0,0);
+  if(s.anim)playScene(document.getElementById("scene"),s.anim);
 }
 function playerQuestion(s){
   const q=QUESTIONS[s.i],key="cq-t:"+gid+":"+s.i;
