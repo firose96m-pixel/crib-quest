@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crib Quest Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a tool cabinet. Foam drawer on top, one manila task card below.
+   Every correct answer seats a tool in its cutout. Single visual world, one theme. */
+:root{
+  --cabinet:#16426f; --cabinet-deep:#0f2f50; --foam:#2a2f35; --cutout:#f2c230;
+  --steel:#dfe5ea; --manila:#f0dfae; --tag:#fffdf4; --ink:#1d2a36; --ink-soft:#55606a;
+  --good:#17794a; --bad:#bf2a22;
+  --display:"Saira Stencil One","Impact","Arial Narrow",sans-serif;
+  --head:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow","Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--cabinet);color:var(--ink);font:500 17px/1.4 var(--body);-webkit-tap-highlight-color:transparent}
+#app{max-width:560px;margin:0 auto;padding:12px 16px 32px;display:flex;flex-direction:column;gap:12px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+button:disabled{cursor:default}
+:focus-visible{outline:3px solid var(--cutout);outline-offset:2px}
+h1,h2,p{margin:0}
+
+/* Top readout */
+.hud{display:flex;align-items:center;gap:10px;color:#fff;min-height:44px}
+.hud .score{font:700 26px/1 var(--head);font-variant-numeric:tabular-nums}
+.hud .streak{font:700 16px/1 var(--head);padding:6px 10px;border-radius:4px;background:var(--cabinet-deep);color:#bcd0e2}
+.hud .streak.hot{background:var(--cutout);color:var(--ink)}
+.hud .mute{margin-left:auto;width:44px;height:44px;display:grid;place-items:center;color:#fff}
+.hud .mute svg{width:24px;height:24px}
+
+/* Foam drawer */
+.tray{background:var(--foam);border-radius:6px;padding:8px;display:grid;grid-template-columns:repeat(8,1fr);gap:2px;box-shadow:inset 0 2px 6px #0009,0 0 0 3px var(--cabinet-deep)}
+.tray.big{grid-template-columns:repeat(5,1fr);gap:6px;padding:12px}
+.slot{aspect-ratio:1;display:block;position:relative}
+.slot svg{width:100%;height:100%;display:block;overflow:visible}
+.slot path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.slot .cut{stroke:var(--cutout)}
+.slot .steel{stroke:var(--steel);opacity:0}
+.slot.in .steel{opacity:1}
+.slot.miss .cut{stroke:var(--bad)}
+.slot.cur{background:#ffffff1f;border-radius:4px}
+.slot.drop svg{animation:drop .42s cubic-bezier(.3,1.5,.5,1)}
+@keyframes drop{from{transform:scale(1.9) rotate(-14deg)}to{transform:none}}
+
+/* Task card */
+.card{background:var(--manila);border-radius:4px 4px 8px 8px;padding:0 16px 16px;position:relative;display:flex;flex-direction:column;gap:12px;box-shadow:0 6px 0 var(--cabinet-deep);overflow:hidden}
+.clock{height:8px;margin:0 -16px;background:#0000001c}
+.clock i{display:block;height:100%;width:100%;background:var(--good);transition:width .25s linear}
+.clock.low i{background:var(--bad)}
+.cardhead{display:flex;justify-content:space-between;gap:12px;font:600 16px/1.2 var(--head);color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.q{font:700 25px/1.16 var(--head);text-wrap:balance}
+.boss{font:400 19px/1 var(--display);color:var(--bad)}
+.how{font-size:15px;color:var(--ink-soft)}
+
+/* Tool tags as answers */
+.answers{display:flex;flex-direction:column;gap:8px}
+.tag{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:8px 14px 8px 12px;text-align:left;background:var(--tag);font:600 18px/1.2 var(--body);clip-path:polygon(14px 0,100% 0,100% 100%,14px 100%,0 calc(100% - 14px),0 14px)}
+.tag .eye{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--manila);font:700 15px/1 var(--head);font-variant-numeric:tabular-nums}
+.tag:not(:disabled):active{transform:translateY(1px);background:#fff}
+.tag:focus-visible{background:var(--cabinet);color:#fff;outline:0}
+.tag.set .eye{background:var(--cabinet);color:#fff}
+.tag.right{background:var(--good);color:#fff}
+.tag.wrong{background:var(--bad);color:#fff}
+.tag.right .eye,.tag.wrong .eye{background:#ffffff33;color:#fff}
+.tag.dim{opacity:.5}
+.tag.gone{visibility:hidden}
+.tag:disabled{color:inherit}
+.tag.right:disabled,.tag.wrong:disabled{color:#fff}
+
+/* Helpers */
+.helpers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.helper{min-height:48px;padding:6px 4px;border:2px solid var(--ink);border-radius:4px;font:700 16px/1.05 var(--head)}
+.helper:disabled{opacity:.3;text-decoration:line-through}
+.hint{font-size:16px;background:var(--tag);padding:10px 12px;border-left:5px solid var(--cabinet)}
+
+/* Big buttons */
+.go{width:100%;min-height:56px;background:var(--cabinet);color:#fff;font:700 21px/1 var(--head);border-radius:4px}
+.go:disabled{opacity:.4}
+.go.alt{background:none;color:var(--ink);border:2px solid var(--ink)}
+.row{display:flex;flex-direction:column;gap:8px}
+
+/* Result */
+.result{display:flex;flex-direction:column;gap:10px;animation:rise .2s ease-out}
+@keyframes rise{from{transform:translateY(8px)}to{transform:none}}
+.stamp{align-self:flex-start;font:400 25px/1 var(--display);padding:6px 12px 4px;border:3px solid currentColor;border-radius:4px;transform:rotate(-3deg);animation:stamp .25s cubic-bezier(.2,1.6,.5,1)}
+.stamp.ok{color:var(--good)}.stamp.no{color:var(--bad)}
+@keyframes stamp{from{transform:scale(2) rotate(-12deg)}to{transform:rotate(-3deg)}}
+.pts{font:700 18px/1.1 var(--head);font-variant-numeric:tabular-nums}
+.src{font-size:14px;color:var(--ink-soft)}
+ol.seq{margin:0;padding-left:22px;font-size:16px}
+
+/* Opening and closing */
+.title{font:400 clamp(58px,18vw,92px)/.92 var(--display);color:var(--cutout);padding-top:6px}
+.sub{color:#fff;font:600 21px/1.2 var(--head)}
+.rules{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none;font-size:16px}
+.toggle{display:flex;align-items:center;gap:12px;min-height:44px;font-weight:600;cursor:pointer}
+.toggle input{width:24px;height:24px;accent-color:var(--cabinet);margin:0}
+.rank{font:400 clamp(36px,11vw,54px)/1 var(--display);color:var(--cabinet);text-wrap:balance}
+.sum{font:700 22px/1.2 var(--head);font-variant-numeric:tabular-nums}
+.badges{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.badge{padding:8px 10px;background:var(--tag);border-radius:4px;font:700 16px/1.1 var(--head)}
+.badge small{display:block;font:500 13px/1.2 var(--body);color:var(--ink-soft);margin-top:3px}
+.badge.off{background:none;box-shadow:inset 0 0 0 1px #0003;color:var(--ink-soft)}
+.review{display:flex;flex-direction:column;gap:10px}
+.review h2{font:700 21px/1.1 var(--head)}
+.miss-item{background:var(--tag);padding:10px 12px;font-size:15px}
+.miss-item b{display:block;font-weight:600}
+.copybox{width:100%;font:500 15px/1.3 var(--body);padding:8px;border:1px solid #0004;background:var(--tag);color:var(--ink);resize:none}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.field{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:16px}
+.field input{font:500 17px/1.3 var(--body);padding:12px;border:2px solid var(--ink);border-radius:4px;background:var(--tag);color:var(--ink);width:100%}
+.err{color:var(--bad);font-weight:600}
+.pin{font:400 clamp(52px,17vw,76px)/1 var(--display);color:var(--cabinet);text-align:center;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.qr{display:grid;place-items:center;min-height:60px}.qr img,.qr canvas{background:var(--tag);padding:10px;max-width:100%}
+.who-list{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.who-list li{background:var(--tag);padding:6px 10px;border-radius:4px;font-weight:600;font-size:16px;overflow-wrap:anywhere}
+.board{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.board li{display:grid;grid-template-columns:28px 1fr auto 62px;gap:8px;align-items:center;background:var(--tag);padding:8px 10px;font:600 17px/1.2 var(--head);font-variant-numeric:tabular-nums}
+.board li.top{background:var(--cutout)}.board .who{overflow-wrap:anywhere}.board .n{text-align:right}.board .pts2{font-weight:700}
+.bars{display:flex;flex-direction:column;gap:4px}
+.barrow{display:flex;justify-content:space-between;gap:12px;background:var(--tag);padding:8px 10px;font-weight:600;font-size:16px}
+.barrow.good{background:var(--good);color:#fff}
+.next{font-size:15px;color:var(--ink-soft)}
+form.row{gap:12px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const QUESTIONS=[{"t":"mc","k":"AccuPort issue","q":"You're about to issue tools from the AccuPort. What's your very first move?","o":["Press Work Order","Scan your badge","Step on Pad A","Open the machine door"]},{"t":"mc","k":"AccuPort issue","q":"You've scanned your badge on Pad A. Which button comes next?","o":["Admin","Work Order","Change Status","Check Items Out"]},{"t":"order","k":"AccuPort issue","q":"Tap these in the right order to get into the AccuPort.","o":["Step on Pad A","Scan Work Order and Task Card","Scan your badge","Press Work Order","Open machine door and step on Pad B"]},{"t":"mc","k":"AccuPort issue","q":"You're standing on Pad B. What must you do before entering the Tool Room?","o":["Scan your badge again","Press Check Items Out","Close the machine door","Step back onto Pad A"]},{"t":"tf","k":"AccuPort issue","q":"True or false: with your tools collected, you can step on Pad B first and close the inside door afterwards.","o":["True","False"]},{"t":"mc","k":"AccuPort issue","q":"Leaving after an issue, where do you confirm the tools in your hand are exact?","o":["The ATR screen","The AccuCab display","A paper log at the door","The ProStock carousel"]},{"t":"tf","k":"AccuPort return","q":"True or false: when you return tools, you still press Work Order and scan the Work Order and Task Card.","o":["True","False"]},{"t":"mc","k":"AccuPort return","q":"Return done and you're back on Pad A. Which button shows whether tools are still outstanding under your name?","o":["Work Order","Check Items Out","Change Status","Adjust"]},{"t":"order","k":"ATR admin","q":"A tool needs to go to calibration. Tap the ATR steps in the right order.","o":["Scan your badge and go to Admin","Search the SerialID or Part Number","Select Adjust","Highlight the tool and select Change Status","Set the status to In Calibration and press YES"]},{"t":"mc","k":"ATR admin","q":"In Adjust on the ATR, what do you search by to find the tool?","o":["Your badge number","Bin or Crib number","SerialID or Part Number","Work Order or Task Card"]},{"t":"mc","k":"CM reports","q":"You need the full record of where one serialised tool has been. Which report do you open?","o":["Tools History by Serial Number","Check Out Items Reports","Daily Transaction Reports","Calibration Overdue Reports"]},{"t":"mc","k":"PPE ProStock","q":"ProStock carousel: you've got your item. How do you close the door?","o":["Press Issue again","Push it shut by hand","Scan your badge again","Press the carousel blue button"]},{"t":"order","k":"PPE ProStock","q":"You need PPE from the ProStock. Tap the steps in the right order.","o":["Select item","Scan your employee badge","Search for the item required","Retrieve the item","Press Issue","Press the carousel blue button"]},{"t":"mc","k":"Support","q":"Who is responsible for on-site maintenance, both corrective and preventive?","o":["The European Support Team","The distributor","The customer","CribMaster Technical Support"]},{"t":"mc","k":"LPR site survey","q":"On a room door with LPR, what's the maximum spacing between antennas on a side?","boss":1,"o":["0.75 m","1.50 m","1.25 m","1.00 m"]}];
+const KEY_BLOB="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";
+const TOOLS=[
+ [["M11 37L27 21",6],["M37 8A9.4 9.4 0 1 0 40 21",6]],
+ [["M9 39L20 28",9],["M20 28L40 8",3.5]],
+ [["M13 42L29 13",4.5],["M21 8L39 18",9]],
+ [["M14 42L24 24L20 7",4],["M34 42L24 24L28 7",4]],
+ [["M7 41L33 15",4.5],["M7 41L15 33",8],["M37 11h.01",11]],
+ [["M24 12V36",16]],
+ [["M24 22m-11 0a11 11 0 1 0 22 0a11 11 0 1 0 -22 0",8],["M24 37H44",4]],
+ [["M9 39L25 23",8],["M28 20L36 12",15]],
+ [["M12 9V33Q12 40 19 40H38",4.5]],
+ [["M11 37L37 11",11]],
+ [["M9 39L27 21",3],["M33 15h.01",17]],
+ [["M9 12H40",5.5],["M14 12V35",4],["M25 12V31",4]],
+ [["M9 39L18 30",4],["M18 30L40 8",8]],
+ [["M14 7L30 42",4],["M34 7L18 42",4]],
+ [["M9 11H39V37H9Z",4],["M18 30a9 9 0 0 1 12 0",3],["M14 24a15 15 0 0 1 20 0",3]]
+];
+
+"use strict";
+const LIMIT=20, GRACE=1.5, MAX_PLAYERS=10;
+const $app=document.getElementById("app");
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=n=>Number(n||0).toLocaleString("en-US");
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const IDT="https://identitytoolkit.googleapis.com/v1/accounts:", STS="https://securetoken.googleapis.com/v1/token";
+
+let cfg={apiKey:"",db:""}, auth={token:"",refresh:"",uid:""}, gid="", muted=store.get("cq-mute")==="1", streams=[];
+
+/* Scoring */
+const multiplier=s=>s>=6?3:s>=3?2:1;
+function points(streak,t,boss){const left=Math.max(0,LIMIT-Math.max(0,t));return (100+Math.round(50*left/LIMIT))*multiplier(streak)*(boss?2:1)}
+function isRight(v,k){if(v==null)return false;if(k.seq)return Array.isArray(v)&&v.length===k.seq.length&&v.every((x,n)=>x===k.seq[n]);return v===k.c}
+function scoreAll(players,answers,key,upto){
+  return Object.keys(players||{}).map(uid=>{
+    let streak=0,score=0,correct=0;const per=[],a=(answers||{})[uid]||{};
+    for(let i=0;i<=upto;i++){const x=a["q"+i],ok=!!x&&isRight(x.v,key[i]);per.push(ok);
+      if(ok){score+=points(streak,x.t,QUESTIONS[i].boss);streak++;correct++}else streak=0}
+    return {uid,name:players[uid].name,score,correct,per};
+  }).sort((p,q)=>q.score-p.score||q.correct-p.correct||String(p.name).localeCompare(String(q.name)));
+}
+function rankFor(n){if(n===15)return "Crib Master";if(n>=12)return "Lead tool controller";if(n>=9)return "Certified issuer";if(n>=5)return "Apprentice on Pad A";return "Still looking for Pad A"}
+function decodeKey(){return JSON.parse(decodeURIComponent(escape(atob(KEY_BLOB.split("").reverse().join("")))))}
+
+/* Firebase over plain HTTP */
+async function post(url,body,form){
+  const r=await fetch(url,{method:"POST",headers:{"Content-Type":form?"application/x-www-form-urlencoded":"application/json"},body:form?body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error((j.error&&j.error.message)||("HTTP "+r.status));
+  return j;
+}
+function setAuth(token,refresh,uid){auth={token,refresh,uid}}
+async function signInAnon(){
+  const saved=store.get("cq-anon:"+cfg.db);
+  if(saved){try{const j=await post(STS+"?key="+cfg.apiKey,"grant_type=refresh_token&refresh_token="+encodeURIComponent(saved),true);setAuth(j.id_token,j.refresh_token,j.user_id);return}catch(e){store.del("cq-anon:"+cfg.db)}}
+  const j=await post(IDT+"signUp?key="+cfg.apiKey,{returnSecureToken:true});
+  setAuth(j.idToken,j.refreshToken,j.localId);store.set("cq-anon:"+cfg.db,j.refreshToken);
+}
+async function signInEmail(email,password){const j=await post(IDT+"signInWithPassword?key="+cfg.apiKey,{email,password,returnSecureToken:true});setAuth(j.idToken,j.refreshToken,j.localId)}
+async function refreshToken(){const j=await post(STS+"?key="+cfg.apiKey,"grant_type=refresh_token&refresh_token="+encodeURIComponent(auth.refresh),true);setAuth(j.id_token,j.refresh_token,j.user_id)}
+const dburl=p=>cfg.db+"/"+p+".json?auth="+encodeURIComponent(auth.token);
+async function api(method,path,body,again){
+  const r=await fetch(dburl(path),{method,body:body===undefined?undefined:JSON.stringify(body)});
+  if(r.status===401&&!again){try{await refreshToken()}catch(e){}return api(method,path,body,true)}
+  if(!r.ok){const e=new Error("HTTP "+r.status);e.status=r.status;throw e}
+  return r.json();
+}
+function applyAt(root,path,fn){
+  const parts=path.split("/").filter(Boolean);
+  if(!parts.length)return fn(root);
+  root=root&&typeof root==="object"?root:{};
+  let n=root;
+  for(let i=0;i<parts.length-1;i++){if(!n[parts[i]]||typeof n[parts[i]]!=="object")n[parts[i]]={};n=n[parts[i]]}
+  const last=parts[parts.length-1],v=fn(n[last]);
+  if(v===null||v===undefined)delete n[last];else n[last]=v;
+  return root;
+}
+function stream(path,onData){
+  let data=null,es=null,stopped=false;
+  const open=()=>{
+    es=new EventSource(dburl(path));
+    es.addEventListener("put",e=>{const m=JSON.parse(e.data);data=applyAt(data,m.path,()=>m.data);onData(data)});
+    es.addEventListener("patch",e=>{const m=JSON.parse(e.data);data=applyAt(data,m.path,o=>Object.assign(o&&typeof o==="object"?o:{},m.data));onData(data)});
+    es.addEventListener("auth_revoked",reopen);es.addEventListener("cancel",reopen);
+  };
+  const reopen=async()=>{if(stopped)return;es.close();try{await refreshToken()}catch(e){}if(!stopped)setTimeout(open,500)};
+  open();
+  const h={stop(){stopped=true;es.close()}};streams.push(h);return h;
+}
+function stopStreams(){streams.forEach(s=>s.stop());streams=[]}
+
+/* Sound and effects */
+let ac=null;
+function tone(f,d,w,at,v){if(muted)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume();const t=ac.currentTime+(at||0),o=ac.createOscillator(),g=ac.createGain();o.type=w||"square";o.frequency.value=f;g.gain.setValueAtTime(v||.06,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d)}catch(e){}}
+const sfx={click(){tone(1500,.03)},lock(){tone(520,.08,"triangle",0,.12);tone(780,.1,"triangle",.07,.12)},next(){tone(980,.09,"triangle",0,.1)},win(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,.2,"triangle",i*.11,.13))}};
+const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
+const fx=document.getElementById("fx"),ctx=fx.getContext("2d");let bits=[],raf=null;
+function burst(n){if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;fx.width=innerWidth;fx.height=innerHeight;for(let i=0;i<n;i++)bits.push({x:Math.random()*fx.width,y:-20-Math.random()*fx.height*.6,vy:3+Math.random()*4,vx:(Math.random()-.5)*2,r:5+Math.random()*7,a:Math.random()*6,s:(Math.random()-.5)*.25,hex:Math.random()<.5,c:["#f2c230","#dfe5ea","#f0dfae"][i%3]});if(!raf)raf=requestAnimationFrame(frame)}
+function frame(){ctx.clearRect(0,0,fx.width,fx.height);bits=bits.filter(b=>b.y<fx.height+30);bits.forEach(b=>{b.y+=b.vy;b.x+=b.vx;b.a+=b.s;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.a);ctx.fillStyle=b.c;ctx.beginPath();if(b.hex){for(let k=0;k<6;k++){const t=k*Math.PI/3;ctx[k?"lineTo":"moveTo"](Math.cos(t)*b.r,Math.sin(t)*b.r)}ctx.closePath()}else ctx.arc(0,0,b.r,0,Math.PI*2);ctx.moveTo(b.r*.45,0);ctx.arc(0,0,b.r*.45,0,Math.PI*2,true);ctx.fill("evenodd");ctx.restore()});raf=bits.length?requestAnimationFrame(frame):null;if(!raf)ctx.clearRect(0,0,fx.width,fx.height)}
+
+/* Shared drawing */
+function slotHTML(i,cls){const t=TOOLS[i];return `<span class="slot ${cls||""}" id="slot${i}"><svg viewBox="0 0 48 48" aria-hidden="true">${t.map(p=>`<path class="cut" d="${p[0]}" stroke-width="${p[1]+4}"/>`).join("")}${t.map(p=>`<path class="steel" d="${p[0]}" stroke-width="${p[1]}"/>`).join("")}</svg></span>`}
+function trayHTML(state,big){return `<div class="tray${big?" big":""}" id="tray" role="img" aria-label="Tool drawer">${TOOLS.map((_,i)=>slotHTML(i,state(i))).join("")}</div>`}
+function muteIcon(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h4l5 4v-13l-5 4z"/>${muted?'<path d="M17 9.5l5 5M22 9.5l-5 5"/>':'<path d="M17 9a4.5 4.5 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/>'}</svg>`}
+function hud(left){return `<div class="hud"><span class="streak">${left}</span><button class="mute" data-act="mute" aria-label="${muted?"Turn sound on":"Turn sound off"}">${muteIcon()}</button></div>`}
+let onAct={};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||b.disabled)return;const a=b.dataset.act;
+  if(a==="mute"){muted=!muted;store.set("cq-mute",muted?"1":"0");b.innerHTML=muteIcon();return}
+  sfx.click();if(onAct[a])onAct[a](b,b.dataset.v)});
+function msg(t){$app.innerHTML=`<section class="card"><div class="clock"></div><p class="q">${esc(t)}</p></section>`}
+function copyBtn(b,text,box){const fail=()=>{document.getElementById(box).innerHTML=`<textarea class="copybox" rows="4" readonly>${esc(text)}</textarea>`};try{navigator.clipboard.writeText(text).then(()=>{const o=b.textContent;b.textContent="Copied";setTimeout(()=>b.textContent=o,1500)},fail)}catch(e){fail()}}
+
+/* ---------- Admin ---------- */
+function rulesFor(email){
+  const A=`auth.token.email === '${email.replace(/'/g,"")}'`, S="root.child('games').child($pin).child('state')";
+  return JSON.stringify({rules:{".read":false,".write":false,games:{$pin:{".read":A,".write":A,
+    state:{".read":"auth != null"},
+    results:{".read":`auth != null && ${S}.child('phase').val() === 'end'`},
+    players:{".read":"auth != null",$uid:{".write":"auth != null && auth.uid === $uid",".validate":`newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 20 && (data.exists() || data.parent().numChildren() < ${MAX_PLAYERS})`}},
+    answers:{$uid:{".read":"auth != null && auth.uid === $uid",$q:{".write":`auth != null && auth.uid === $uid && !data.exists() && ${S}.child('phase').val() === 'question' && ${S}.child('qk').val() === $q`,".validate":"newData.hasChildren(['v','t']) && newData.child('t').isNumber()"}}}
+  }}}},null,2);
+}
+function adminSetup(err){
+  stopStreams();
+  const c=JSON.parse(store.get("cq-host")||"{}");
+  $app.innerHTML=`${hud("Admin sign-in")}
+  <h1 class="title">Crib Quest Live</h1>
+  <section class="card"><div class="clock"></div>
+    <form id="f" class="row">
+      <label class="field" for="fKey">Firebase Web API key<input id="fKey" autocomplete="off" required value="${esc(c.apiKey||"")}"></label>
+      <label class="field" for="fDb">Realtime Database URL<input id="fDb" type="url" required placeholder="https://your-project-default-rtdb.firebaseio.com" value="${esc(c.db||"")}"></label>
+      <label class="field" for="fMail">Admin email<input id="fMail" type="email" required autocomplete="username" value="${esc(c.email||"")}"></label>
+      <label class="field" for="fPass">Admin password<input id="fPass" type="password" required autocomplete="current-password"></label>
+      ${err?`<p class="err">${esc(err)}</p>`:""}
+      <button class="go" type="submit">Sign in and open a game</button>
+    </form>
+    <div class="row"><button class="go alt" data-act="rules">Copy database rules</button><div id="rulesOut"></div>
+    <p class="src">Type your admin email first. The rules are written for that address.</p></div>
+  </section>`;
+  onAct.rules=b=>copyBtn(b,rulesFor(document.getElementById("fMail").value.trim()||"ADMIN_EMAIL"),"rulesOut");
+  document.getElementById("f").addEventListener("submit",async e=>{e.preventDefault();
+    const v=id=>document.getElementById(id).value.trim();
+    cfg={apiKey:v("fKey"),db:v("fDb").replace(/\/+$/,"")};
+    store.set("cq-host",JSON.stringify({apiKey:cfg.apiKey,db:cfg.db,email:v("fMail")}));
+    try{await signInEmail(v("fMail"),document.getElementById("fPass").value)}catch(ex){return adminSetup("Sign-in failed ("+ex.message+"). Check the API key, email and password.")}
+    hostOpen().catch(ex=>adminSetup("Can't reach the database ("+ex.message+"). Check the URL and that you pasted the rules for this email."));
+  });
+}
+const H={players:{},answers:{},state:null,timer:null,key:null,lastView:""};
+async function putState(s){H.state=s;await api("PUT",`games/${gid}/state`,s);hostRender()}
+async function hostOpen(){
+  H.key=decodeKey();
+  const saved=store.get("cq-game");let s=null;
+  if(saved){try{s=await api("GET",`games/${saved}/state`)}catch(e){s=null}}
+  if(s&&s.phase&&s.phase!=="end"){gid=saved;H.state=s}
+  else{gid=String(Math.floor(100000+Math.random()*900000));store.set("cq-game",gid);H.state={phase:"lobby",i:-1,qk:""};await api("PUT",`games/${gid}/state`,H.state)}
+  H.players={};H.answers={};H.lastView="";
+  stream(`games/${gid}/players`,d=>{H.players=d||{};hostRender()});
+  stream(`games/${gid}/answers`,d=>{H.answers=d||{};hostRender()});
+  hostRender();
+}
+function joinLink(){const u=location.href.split("#")[0];return `${u}#pin=${gid}&k=${encodeURIComponent(cfg.apiKey)}&d=${encodeURIComponent(cfg.db)}`}
+function drawQR(){const el=document.getElementById("qr");if(!el)return;el.innerHTML="";if(window.QRCode){new QRCode(el,{text:joinLink(),width:220,height:220,colorDark:"#1d2a36",colorLight:"#fffdf4",correctLevel:QRCode.CorrectLevel.M})}else el.innerHTML='<p class="src">QR code needs internet. Share the join link instead.</p>'}
+function hostClock(){
+  clearInterval(H.timer);
+  H.timer=setInterval(()=>{const s=H.state;if(!s||s.phase!=="question")return clearInterval(H.timer);
+    const left=LIMIT-(Date.now()-s.at)/1000;
+    const bar=document.getElementById("bar"),sec=document.getElementById("secs"),c=document.getElementById("clock");
+    if(bar){bar.style.width=Math.max(0,left/LIMIT*100)+"%";c.classList.toggle("low",left<=6);sec.textContent=Math.max(0,Math.ceil(left))+"s"}
+    if(left<=-GRACE){clearInterval(H.timer);putState({phase:"review",i:s.i,qk:""})}
+  },200);
+}
+const answeredCount=i=>Object.keys(H.players).filter(u=>(H.answers[u]||{})["q"+i]).length;
+function boardHTML(rows){return `<ol class="board">${rows.map((r,n)=>`<li class="${n===0?"top":""}"><span class="pos">${n+1}</span><span class="who">${esc(r.name)}</span><span class="n">${r.correct}/${r.per.length}</span><span class="n pts2">${fmt(r.score)}</span></li>`).join("")}</ol>`}
+function hostRender(){
+  const s=H.state,n=Object.keys(H.players).length;if(!s)return;
+  const view=s.phase+":"+s.i;
+  if(s.phase==="lobby"){
+    if(H.lastView===view){const l=document.getElementById("who");if(l){l.innerHTML=Object.values(H.players).map(p=>`<li>${esc(p.name)}</li>`).join("")||"<li>Nobody yet</li>";document.getElementById("cnt").textContent=n;document.getElementById("startBtn").disabled=n===0}return}
+    H.lastView=view;
+    $app.innerHTML=`${hud("Admin")}
+    <section class="card"><div class="clock"></div>
+      <p class="src">Scan to join, or enter this PIN from the join link</p>
+      <p class="pin">${gid}</p>
+      <div id="qr" class="qr"></div>
+      <button class="go alt" data-act="link">Copy join link</button><div id="linkOut"></div>
+      <h2 class="q"><span id="cnt">${n}</span> of ${MAX_PLAYERS} players in</h2>
+      <ul class="who-list" id="who">${Object.values(H.players).map(p=>`<li>${esc(p.name)}</li>`).join("")||"<li>Nobody yet</li>"}</ul>
+      <button class="go" id="startBtn" data-act="start" ${n?"":"disabled"}>Start the first task card</button>
+    </section>`;
+    drawQR();
+    onAct.link=b=>copyBtn(b,joinLink(),"linkOut");
+    onAct.start=()=>putState({phase:"question",i:0,qk:"q0",at:Date.now()});
+    return;
+  }
+  if(s.phase==="question"){
+    const q=QUESTIONS[s.i];
+    if(H.lastView===view){const a=document.getElementById("ans");if(a)a.textContent=answeredCount(s.i)+" of "+n;return}
+    H.lastView=view;sfx.next();
+    $app.innerHTML=`${hud("Admin")}<section class="card"><div class="clock" id="clock"><i id="bar"></i></div>
+      <div class="cardhead"><span>Task card ${s.i+1} of 15 <span id="secs">${LIMIT}s</span></span><span>${esc(q.k)}</span></div>
+      ${q.boss?'<p class="boss">Final inspection, double points</p>':""}
+      <h2 class="q">${esc(q.q)}</h2>
+      <p class="sum">Answers in: <span id="ans">${answeredCount(s.i)} of ${n}</span></p>
+      <p class="src">The answer and scores appear when the time is up.</p></section>`;
+    hostClock();return;
+  }
+  if(s.phase==="review"){
+    H.lastView=view;
+    const q=QUESTIONS[s.i],k=H.key[s.i],board=scoreAll(H.players,H.answers,H.key,s.i);
+    const rows=Object.keys(H.players).map(u=>(H.answers[u]||{})["q"+s.i]);
+    let detail;
+    if(k.seq){const ok=rows.filter(a=>a&&isRight(a.v,k)).length,wrong=rows.filter(a=>a&&!isRight(a.v,k)).length,none=rows.filter(a=>!a).length;
+      detail=`<ol class="seq">${k.seq.map(x=>`<li>${esc(x)}</li>`).join("")}</ol><p class="sum">${ok} right, ${wrong} wrong, ${none} no answer</p>`}
+    else detail=`<div class="bars">${q.o.map(o=>{const c=rows.filter(a=>a&&a.v===o).length;return `<div class="barrow ${o===k.c?"good":""}"><span>${esc(o)}</span><b>${c}</b></div>`}).join("")}<div class="barrow"><span>No answer</span><b>${rows.filter(a=>!a).length}</b></div></div>`;
+    const last=s.i===14,nq=QUESTIONS[s.i+1];
+    $app.innerHTML=`${hud("Admin only: players can't see this")}<section class="card"><div class="clock"></div>
+      <div class="cardhead"><span>Task card ${s.i+1} of 15</span><span>${esc(q.k)}</span></div>
+      <h2 class="q">${esc(q.q)}</h2>${detail}<p>${esc(k.e)}</p><p class="src">Source: ${esc(k.s)}</p>
+      <h2 class="q">Scores so far</h2>${boardHTML(board)}
+      ${nq?`<p class="next"><b>Next up:</b> ${esc(nq.q)}</p>`:""}
+      <button class="go" id="nextBtn" data-act="next">${last?"Finish and show results":"Next task card"}</button></section>`;
+    onAct.next=async b=>{b.disabled=true;
+      if(last){const full=scoreAll(H.players,H.answers,H.key,14);
+        const results={board:full.map(r=>({uid:r.uid,name:r.name,score:r.score,correct:r.correct})),per:Object.fromEntries(full.map(r=>[r.uid,r.per])),reveal:QUESTIONS.map((x,i)=>({q:x.q,a:H.key[i].seq?H.key[i].seq.join(", then "):H.key[i].c,s:H.key[i].s}))};
+        await api("PUT",`games/${gid}/results`,results);await putState({phase:"end",i:14,qk:""})}
+      else await putState({phase:"question",i:s.i+1,qk:"q"+(s.i+1),at:Date.now()})};
+    return;
+  }
+  if(s.phase==="end"){
+    if(H.lastView===view)return;H.lastView=view;
+    const board=scoreAll(H.players,H.answers,H.key,14);
+    $app.innerHTML=`${hud("Game finished")}<section class="card"><div class="clock"></div>
+      <h1 class="rank">Final standings</h1>${boardHTML(board)}
+      <button class="go" data-act="again">Open a new game</button></section>`;
+    sfx.win();burst(160);
+    onAct.again=async()=>{stopStreams();try{await api("DELETE",`games/${gid}`)}catch(e){}store.del("cq-game");hostOpen().catch(ex=>adminSetup(ex.message))};
+  }
+}
+
+/* ---------- Player ---------- */
+const P={name:"",state:null,view:"",locked:{},timer:null,picks:[]};
+function playerJoin(params,err){
+  $app.innerHTML=`${hud("Join the game")}<h1 class="title">Crib Quest</h1>
+  <section class="card"><div class="clock"></div>
+    <form id="j" class="row">
+      ${params.pin?"":`<label class="field" for="jPin">Game PIN<input id="jPin" inputmode="numeric" maxlength="6" required></label>`}
+      <label class="field" for="jName">Your name<input id="jName" maxlength="20" required autocomplete="off" value="${esc(store.get("cq-name")||"")}"></label>
+      ${err?`<p class="err">${esc(err)}</p>`:""}
+      <button class="go" type="submit">Join</button>
+    </form></section>`;
+  document.getElementById("j").addEventListener("submit",async e=>{e.preventDefault();
+    const name=document.getElementById("jName").value.trim();if(!name)return;
+    const pinEl=document.getElementById("jPin");if(pinEl)params.pin=pinEl.value.trim();
+    gid=params.pin;store.set("cq-name",name);P.name=name;
+    try{
+      await signInAnon();
+      const st=await api("GET",`games/${gid}/state`);
+      if(!st){if(pinEl)delete params.pin;return playerJoin(params,"No game with that PIN. Check it with the admin.")}
+      await api("PUT",`games/${gid}/players/${auth.uid}`,{name});
+      const mine=await api("GET",`games/${gid}/answers/${auth.uid}`).catch(()=>null);
+      P.locked=mine||{};
+      stream(`games/${gid}/state`,d=>{P.state=d;playerRender()});
+      msg("Connecting…");
+    }catch(ex){playerJoin(params,ex.status===401?"This game is full. Ask the admin for a place.":"Couldn't connect. Check your internet and try again.")}
+  });
+}
+const pTray=()=>trayHTML(i=>P.locked["q"+i]?"in":(P.state&&P.state.phase==="question"&&i===P.state.i?"cur":""));
+function lockedView(title,line){
+  $app.innerHTML=`${hud(esc(P.name))}${pTray()}<section class="card"><div class="clock"></div>
+    <div class="result"><div class="stamp ok">${title}</div><p class="q">${line}</p></div></section>`;
+}
+function playerRender(){
+  const s=P.state;if(!s)return msg("The admin closed this game.");
+  const view=s.phase+":"+s.i;if(P.view===view)return;P.view=view;clearInterval(P.timer);
+  if(s.phase==="lobby")return lockedView("You're in","Waiting for the admin to start the quiz.");
+  if(s.phase==="question"){if(P.locked[s.qk])return lockedView("Locked in","Waiting for the admin.");return playerQuestion(s)}
+  if(s.phase==="review"){const had=P.locked["q"+s.i];return lockedView(had?"Locked in":"Out of time","Waiting for the admin to open the next card.")}
+  if(s.phase==="end")return playerEnd();
+}
+function playerQuestion(s){
+  const q=QUESTIONS[s.i],key="cq-t:"+gid+":"+s.i;
+  let t0=Number(sessionStorage.getItem(key)||0);if(!t0){t0=Date.now();try{sessionStorage.setItem(key,String(t0))}catch(e){}}
+  P.picks=[];
+  $app.innerHTML=`${hud(esc(P.name))}${pTray()}<section class="card"><div class="clock" id="clock"><i id="bar"></i></div>
+    <div class="cardhead"><span>Task card ${s.i+1} of 15 <span id="secs">${LIMIT}s</span></span><span>${esc(q.k)}</span></div>
+    ${q.boss?'<p class="boss">Final inspection, double points</p>':""}
+    <h2 class="q">${esc(q.q)}</h2>
+    ${q.t==="order"?'<p class="how">Tap a step to number it. Tap it again to take the number off.</p>':""}
+    <div class="answers">${q.o.map((o,i)=>`<button class="tag" id="a${i}" data-act="${q.t==="order"?"step":"pick"}" data-v="${i}"><span class="eye">${q.t==="order"?"":"ABCD"[i]}</span><span>${esc(o)}</span></button>`).join("")}</div>
+    ${q.t==="order"?'<button class="go" id="check" data-act="check" disabled>Lock in my order</button>':""}
+  </section>`;
+  window.scrollTo(0,0);
+  const elapsed=()=>(Date.now()-t0)/1000;
+  const send=async v=>{
+    clearInterval(P.timer);const t=Math.min(LIMIT,Math.round(elapsed()*10)/10);
+    lockedView("Sending","One moment.");
+    try{await api("PUT",`games/${gid}/answers/${auth.uid}/${s.qk}`,{v,t});P.locked[s.qk]={v,t};sfx.lock();buzz(30);lockedView("Locked in","Waiting for the admin.")}
+    catch(e){lockedView("Out of time","That answer arrived too late.")}
+  };
+  onAct.pick=(b,v)=>send(q.o[Number(v)]);
+  onAct.step=(b,v)=>{v=Number(v);const n=P.picks.indexOf(v);if(n>=0)P.picks.splice(n,1);else P.picks.push(v);q.o.forEach((_,i)=>{const el=document.getElementById("a"+i),p=P.picks.indexOf(i);el.classList.toggle("set",p>=0);el.querySelector(".eye").textContent=p>=0?p+1:""});document.getElementById("check").disabled=P.picks.length!==q.o.length};
+  onAct.check=()=>send(P.picks.map(i=>q.o[i]));
+  P.timer=setInterval(()=>{const left=LIMIT-elapsed(),bar=document.getElementById("bar"),sec=document.getElementById("secs"),c=document.getElementById("clock");
+    if(bar){bar.style.width=Math.max(0,left/LIMIT*100)+"%";c.classList.toggle("low",left<=6);sec.textContent=Math.max(0,Math.ceil(left))+"s"}
+    if(left<=0){clearInterval(P.timer);if(q.t==="order"&&P.picks.length===q.o.length)send(P.picks.map(i=>q.o[i]));else lockedView("Out of time","Waiting for the admin.")}
+  },200);
+}
+async function playerEnd(){
+  msg("Adding up the scores…");
+  let r=null;for(let n=0;n<8&&!r;n++){try{r=await api("GET",`games/${gid}/results`)}catch(e){}if(!r)await new Promise(x=>setTimeout(x,700))}
+  if(!r)return msg("Results aren't available yet. Reload this page in a moment.");
+  const place=r.board.findIndex(x=>x.uid===auth.uid),me=r.board[place]||{score:0,correct:0},per=(r.per||{})[auth.uid]||[];
+  const missed=r.reveal.filter((_,i)=>!per[i]);
+  $app.innerHTML=`${hud(esc(P.name))}${trayHTML(i=>per[i]?"in":"miss",true)}
+  <section class="card"><div class="clock"></div>
+    <h1 class="rank">${rankFor(me.correct)}</h1>
+    <p class="sum">${place>=0?"Place "+(place+1)+" of "+r.board.length+", ":""}${me.correct} of 15 tools, ${fmt(me.score)} points</p>
+    <ol class="board">${r.board.map((x,n)=>`<li class="${x.uid===auth.uid?"top":""}"><span class="pos">${n+1}</span><span class="who">${esc(x.name)}</span><span class="n">${x.correct}/15</span><span class="n pts2">${fmt(x.score)}</span></li>`).join("")}</ol>
+    ${missed.length?`<div class="review"><h2>Tools still missing</h2>${missed.map(x=>`<div class="miss-item"><b>${esc(x.q)}</b>Answer: ${esc(x.a)}<div class="src">${esc(x.s)}</div></div>`).join("")}</div>`:""}
+  </section>`;
+  window.scrollTo(0,0);if(place===0||me.correct>=12){sfx.win();burst(160)}
+}
+
+/* ---------- Start ---------- */
+(function(){
+  const h=new URLSearchParams(location.hash.slice(1));
+  if(h.get("d")&&h.get("k")){cfg={apiKey:h.get("k"),db:h.get("d")};playerJoin({pin:h.get("pin")||""})}
+  else adminSetup();
+})();
+</script>
+</body>
+</html>
